@@ -1,0 +1,72 @@
+from __future__ import annotations
+
+from functools import lru_cache
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        case_sensitive=False,
+    )
+
+    bot_token: str = Field(..., alias="BOT_TOKEN")
+    admin_id: int = Field(..., alias="ADMIN_ID")
+    support_username: str = Field(..., alias="SUPPORT_USERNAME")
+
+    cryptobot_token: str = Field(..., alias="CRYPTOBOT_TOKEN")
+    cryptobot_testnet: bool = Field(False, alias="CRYPTOBOT_TESTNET")
+    cryptobot_polling: bool = Field(True, alias="CRYPTOBOT_POLLING")
+    cryptobot_poll_interval: int = Field(15, alias="CRYPTOBOT_POLL_INTERVAL")
+    cryptobot_base_url: str = Field("", alias="CRYPTOBOT_BASE_URL")
+    cryptobot_webhook_secret: str = Field("", alias="CRYPTOBOT_WEBHOOK_SECRET")
+
+    database_url: str = Field("sqlite+aiosqlite:///data/db.sqlite3", alias="DATABASE_URL")
+
+    default_referral_percent: int = Field(5, alias="DEFAULT_REFERRAL_PERCENT")
+    default_min_topup_rub: int = Field(100, alias="DEFAULT_MIN_TOPUP_RUB")
+    default_stock_low_threshold: int = Field(5, alias="DEFAULT_STOCK_LOW_THRESHOLD")
+    default_max_qty_per_order: int = Field(10, alias="DEFAULT_MAX_QTY_PER_ORDER")
+
+    default_notify_new_user: bool = Field(True, alias="DEFAULT_NOTIFY_NEW_USER")
+    default_notify_new_topup: bool = Field(True, alias="DEFAULT_NOTIFY_NEW_TOPUP")
+    default_notify_new_purchase: bool = Field(True, alias="DEFAULT_NOTIFY_NEW_PURCHASE")
+    default_notify_low_stock: bool = Field(True, alias="DEFAULT_NOTIFY_LOW_STOCK")
+    default_notify_refund: bool = Field(True, alias="DEFAULT_NOTIFY_REFUND")
+
+    debug_mode: bool = Field(True, alias="DEBUG_MODE")
+
+    tz: str = Field("Europe/Moscow", alias="TZ")
+    log_level: str = Field("INFO", alias="LOG_LEVEL")
+
+    backup_retention_days: int = Field(14, alias="BACKUP_RETENTION_DAYS")
+    backup_hour: int = Field(4, alias="BACKUP_HOUR")
+    backup_minute: int = Field(0, alias="BACKUP_MINUTE")
+
+    app_host: str = Field("0.0.0.0", alias="APP_HOST")
+    app_port: int = Field(8080, alias="APP_PORT")
+
+    @property
+    def support_url(self) -> str:
+        u = self.support_username.strip()
+        if u.startswith("https://t.me/") or u.startswith("http://t.me/"):
+            return u
+        if u.startswith("t.me/"):
+            return f"https://{u}"
+        u = u.lstrip("@")
+        return f"https://t.me/{u}"
+
+    @property
+    def webhook_url(self) -> str:
+        if not self.cryptobot_base_url:
+            return ""
+        return f"{self.cryptobot_base_url.rstrip('/')}/cryptobot/webhook"
+
+
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    return Settings()  # type: ignore[call-arg]
