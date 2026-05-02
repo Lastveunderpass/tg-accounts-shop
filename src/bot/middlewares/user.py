@@ -17,12 +17,19 @@ def _extract_tg_user(event: TelegramObject) -> TgUser | None:
         return event.from_user
     if isinstance(event, CallbackQuery):
         return event.from_user
+    # Update-обёртка от dp.update.outer_middleware — достаём пользователя из
+    # содержимого апдейта (message / callback_query / chat_member и т.п.).
+    for attr in ("message", "edited_message", "channel_post", "callback_query"):
+        sub = getattr(event, attr, None)
+        if sub is not None and getattr(sub, "from_user", None) is not None:
+            return sub.from_user
     return getattr(event, "from_user", None)
 
 
 def _extract_start_payload(event: TelegramObject) -> str | None:
-    if isinstance(event, Message) and event.text and event.text.startswith("/start"):
-        parts = event.text.split(maxsplit=1)
+    msg = event if isinstance(event, Message) else getattr(event, "message", None)
+    if msg is not None and msg.text and msg.text.startswith("/start"):
+        parts = msg.text.split(maxsplit=1)
         if len(parts) > 1:
             return parts[1].strip()
     return None
@@ -64,10 +71,12 @@ class UserContextMiddleware(BaseMiddleware):
         data["user"] = user
 
         if user.is_banned:
-            if isinstance(event, Message):
-                await event.answer(texts.BANNED)
-            elif isinstance(event, CallbackQuery):
-                await event.answer(texts.BANNED, show_alert=True)
+            msg = event if isinstance(event, Message) else getattr(event, "message", None)
+            cb = event if isinstance(event, CallbackQuery) else getattr(event, "callback_query", None)
+            if isinstance(msg, Message):
+                await msg.answer(texts.BANNED)
+            elif isinstance(cb, CallbackQuery):
+                await cb.answer(texts.BANNED, show_alert=True)
             return None
 
         return await handler(event, data)

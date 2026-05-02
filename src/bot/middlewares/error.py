@@ -29,10 +29,23 @@ class ErrorMiddleware(BaseMiddleware):
         except Exception as e:
             logger.exception("handler_error", error=str(e))
             try:
+                msg: Message | None = None
+                cb: CallbackQuery | None = None
                 if isinstance(event, Message):
-                    await event.answer(texts.ERROR_GENERIC)
+                    msg = event
                 elif isinstance(event, CallbackQuery):
-                    await event.answer(texts.ERROR_GENERIC, show_alert=True)
+                    cb = event
+                else:
+                    inner_msg = getattr(event, "message", None)
+                    inner_cb = getattr(event, "callback_query", None)
+                    if isinstance(inner_msg, Message):
+                        msg = inner_msg
+                    if isinstance(inner_cb, CallbackQuery):
+                        cb = inner_cb
+                if msg is not None:
+                    await msg.answer(texts.ERROR_GENERIC)
+                elif cb is not None:
+                    await cb.answer(texts.ERROR_GENERIC, show_alert=True)
             except TelegramAPIError:
                 pass
             await notify_admin_error(self.bot, where=type(event).__name__, exc=e)
