@@ -16,8 +16,10 @@ from src.db.session import SessionLocal, engine
 from src.logger import get_logger, setup_logging
 from src.services.backup_service import run_sqlite_backup
 from src.services.cryptobot_polling import CryptoBotPoller
+from src.services.lolzteam_polling import LolzteamPoller
 from src.services.notifications import notify_admin
 from src.webhooks.cryptobot import build_router as cryptobot_router
+from src.webhooks.lolzteam import build_router as lolzteam_router
 
 setup_logging()
 logger = get_logger("main")
@@ -58,6 +60,12 @@ async def lifespan(app: FastAPI):
         await poller.start()
     app.state.poller = poller
 
+    lolz_poller: LolzteamPoller | None = None
+    if settings.lolzteam_polling and settings.lolzteam_configured:
+        lolz_poller = LolzteamPoller(bot)
+        await lolz_poller.start()
+    app.state.lolz_poller = lolz_poller
+
     scheduler = _build_scheduler()
     scheduler.start()
     app.state.scheduler = scheduler
@@ -76,6 +84,8 @@ async def lifespan(app: FastAPI):
             pass
         if poller is not None:
             await poller.stop()
+        if lolz_poller is not None:
+            await lolz_poller.stop()
         scheduler.shutdown(wait=False)
         polling_task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
@@ -100,6 +110,11 @@ def build_app() -> FastAPI:
         app.include_router(cryptobot_router(bot))
     else:
         logger.info("cryptobot_polling_mode")
+
+    # Lolzteam webhook регистрируем всегда, если настроен — даже в polling-режиме
+    # это даёт мгновенный кредит при оплате (polling — лишь подстраховка).
+    if settings.lolzteam_configured:
+        app.include_router(lolzteam_router(bot))
 
     return app
 

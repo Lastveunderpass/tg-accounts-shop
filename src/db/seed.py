@@ -17,6 +17,9 @@ DEFAULT_SETTING_KEYS: dict[str, str] = {
     "notify_low_stock": "default_notify_low_stock",
     "notify_refund": "default_notify_refund",
     "debug_mode": "debug_mode",
+    "cryptobot_enabled": "default_cryptobot_enabled",
+    "lolzteam_enabled": "default_lolzteam_enabled",
+    "lolzteam_surcharge_percent": "default_lolzteam_surcharge_percent",
 }
 
 

@@ -60,12 +60,24 @@ BALANCE_VIEW = (
 )
 TOPUP_AMOUNT_PROMPT = "Введи сумму пополнения в рублях (минимум {min} ₽):"
 TOPUP_AMOUNT_INVALID = "Сумма должна быть числом ≥ {min} ₽."
+TOPUP_PROVIDER_PROMPT = "Выбери способ оплаты:"
+TOPUP_PROVIDER_NONE = (
+    "❌ Сейчас приём платежей временно отключён. Загляни позже или напиши в поддержку."
+)
 TOPUP_ASSET_PROMPT = "Выбери криптовалюту для оплаты:"
 TOPUP_INVOICE_CREATED = (
     "💳 <b>Счёт на оплату</b>\n\n"
     "Сумма: <b>{amount_rub}</b> = <b>{amount_crypto}</b>\n"
     "Курс: 1 {asset} ≈ {rate} ₽\n\n"
     "Оплати по кнопке ниже. После оплаты баланс пополнится автоматически."
+)
+TOPUP_LOLZTEAM_INVOICE_CREATED = (
+    "💳 <b>Счёт на оплату через Lolzteam</b>\n\n"
+    "К зачислению: <b>{amount_rub}</b>\n"
+    "Комиссия {percent}%: <b>{surcharge}</b>\n"
+    "<b>К оплате: {gross}</b>\n\n"
+    "Оплати по кнопке ниже (карта, СБП, Steam и др.). "
+    "После оплаты баланс пополнится автоматически."
 )
 TOPUP_NO_PENDING = "Активных счетов нет."
 TOPUP_PENDING_LIST_HEADER = "⏳ <b>Активные счета:</b>"

@@ -68,6 +68,11 @@ class CryptoAsset(enum.StrEnum):
     LTC = "LTC"
 
 
+class PaymentProvider(enum.StrEnum):
+    cryptobot = "cryptobot"
+    lolzteam = "lolzteam"
+
+
 # ─────────────────────────────────────────── User ───────────────────────────────────────────
 class User(Base):
     __tablename__ = "users"
@@ -273,12 +278,36 @@ class Topup(Base):
         BigInteger, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     amount_rub: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
-    crypto_asset: Mapped[CryptoAsset] = mapped_column(
-        SAEnum(CryptoAsset, name="crypto_asset"), nullable=False
+    # Способ оплаты. Для cryptobot заполнены crypto_*, для lolzteam — lolzteam_*.
+    provider: Mapped[PaymentProvider] = mapped_column(
+        SAEnum(PaymentProvider, name="payment_provider"),
+        nullable=False,
+        default=PaymentProvider.cryptobot,
+        index=True,
     )
-    crypto_amount: Mapped[Decimal] = mapped_column(Numeric(36, 18), nullable=False)
-    crypto_rate_rub: Mapped[Decimal] = mapped_column(Numeric(36, 18), nullable=False)
-    cryptobot_invoice_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True, index=True)
+    # CryptoBot-специфичные поля (NULL для lolzteam).
+    crypto_asset: Mapped[CryptoAsset | None] = mapped_column(
+        SAEnum(CryptoAsset, name="crypto_asset"), nullable=True
+    )
+    crypto_amount: Mapped[Decimal | None] = mapped_column(Numeric(36, 18), nullable=True)
+    crypto_rate_rub: Mapped[Decimal | None] = mapped_column(Numeric(36, 18), nullable=True)
+    cryptobot_invoice_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True, unique=True, index=True
+    )
+    # Lolzteam-специфичные поля (NULL для cryptobot).
+    lolzteam_invoice_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True, unique=True, index=True
+    )
+    lolzteam_payment_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, unique=True, index=True
+    )
+    # Сумма к оплате с учётом наценки провайдера (для lolzteam — amount_rub * 1.06).
+    # Для cryptobot равно amount_rub (наценки нет).
+    gross_amount_rub: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)
+    # Зафиксированная при создании наценка, %. Чтобы старые инвойсы не пересчитывались
+    # после смены настройки.
+    surcharge_percent: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
+
     pay_url: Mapped[str] = mapped_column(String(512), nullable=False)
     status: Mapped[TopupStatus] = mapped_column(
         SAEnum(TopupStatus, name="topup_status"), nullable=False, default=TopupStatus.pending, index=True

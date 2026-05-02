@@ -44,6 +44,36 @@ def crypto_assets_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def topup_provider_keyboard(
+    *,
+    cryptobot_enabled: bool,
+    lolzteam_enabled: bool,
+    surcharge_percent: str | int = "",
+) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    if cryptobot_enabled:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text="💎 CryptoBot (USDT/TON/BTC/LTC)",
+                    callback_data="topup_provider:cryptobot",
+                )
+            ]
+        )
+    if lolzteam_enabled:
+        suffix = f" (+{surcharge_percent}%)" if surcharge_percent != "" else ""
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=f"🌳 Lolzteam{suffix}",
+                    callback_data="topup_provider:lolzteam",
+                )
+            ]
+        )
+    rows.append([InlineKeyboardButton(text=texts.CANCEL, callback_data="cancel")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 def support_keyboard(support_url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text="📨 Написать в поддержку", url=support_url)]]

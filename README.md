@@ -7,7 +7,7 @@ Telegram-бот для продажи зарегистрированных ак�
 - Каталог с иерархией **Категория → Товар → Вариант**, каждый вариант имеет свою цену и сток.
 - Три режима заливки стока (на товаре): **ZIP с файлами**, **по строкам**, **несколько документов одним сообщением**. JSON-cookies сохраняются как есть, многострочно.
 - Покупка с резервированием стока, лимит **до 10 шт. за заказ** (настраивается).
-- Баланс в рублях, пополнение через CryptoBot (USDT/TON/BTC/LTC). Курс берётся автоматически, округление в пользу сервиса.
+- Баланс в рублях, пополнение через **CryptoBot** (USDT/TON/BTC/LTC) и **Lolzteam Market** (карты/СБП/Steam/Binance — RUB). Курс CryptoBot берётся автоматически, для Lolzteam применяется настраиваемая наценка (по умолчанию +6%). Округление в пользу сервиса.
 - **Реферальная программа**: 5% от пополнений приглашённого, навсегда, на баланс. Процент настраивается.
 - **Промокоды**: процентная скидка, фиксированная скидка, бонус на баланс. Лимиты, срок, scope (категория/товар/вариант), мин. заказ.
 - **История покупок** с повторным скачиванием файлов.
@@ -53,10 +53,23 @@ docker compose up -d --build # обновить и поднять
 | `SUPPORT_USERNAME` | Юзернейм саппорта (тоже админа) |
 | `CRYPTOBOT_TOKEN` | Crypto Pay App token |
 | `CRYPTOBOT_POLLING` | `true` — опрос инвойсов (без домена), `false` — webhook (нужен HTTPS-домен) |
-| `CRYPTOBOT_BASE_URL` | Публичный HTTPS URL — нужен только при `CRYPTOBOT_POLLING=false` |
+| `CRYPTOBOT_BASE_URL` | Публичный HTTPS URL — нужен только при `CRYPTOBOT_POLLING=false` или для Lolzteam-callback'а |
+| `LOLZTEAM_TOKEN` | API-токен Lolzteam Market (lolz.live → Account upgrades → API, scope `payments`). Опционально |
+| `LOLZTEAM_MERCHANT_ID` | ID мерчанта (lzt.market → Settings → Payments → Merchants). Опционально |
+| `LOLZTEAM_POLLING` | `true` — опрос статусов (без домена), `false` — только webhook |
+| `LOLZTEAM_INVOICE_LIFETIME` | Время жизни инвойса в секундах (300..43200, дефолт 3600) |
 | `DEBUG_MODE` | На время тестов = `true` (ошибки шлются админу в личку) |
 
-Параметры **referral_percent / min_topup_rub / stock_low_threshold / max_qty_per_order / debug_mode / уведомления** меняются прямо в админке (раздел «⚙️ Настройки») без рестарта.
+Параметры **referral_percent / min_topup_rub / stock_low_threshold / max_qty_per_order / debug_mode / уведомления / cryptobot_enabled / lolzteam_enabled / lolzteam_surcharge_percent** меняются прямо в админке (раздел «⚙️ Настройки») без рестарта.
+
+### Подключение Lolzteam Market
+
+1. На lolz.live → Account upgrades → API создать токен со scope `payments`.
+2. На lzt.market → Settings → Payments → Merchants создать мерчанта (получишь `merchant_id`).
+3. В `.env` прописать `LOLZTEAM_TOKEN` и `LOLZTEAM_MERCHANT_ID`, перезапустить контейнер.
+4. В админке бота включить «Оплата через Lolzteam» и при необходимости задать наценку.
+
+Если у тебя есть HTTPS-домен — пропиши его в `CRYPTOBOT_BASE_URL`, бот выставит callback `https://<домен>/lolzteam/webhook` для мгновенного зачисления; polling остаётся как страховка.
 
 ## Архитектура
 

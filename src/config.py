@@ -25,6 +25,24 @@ class Settings(BaseSettings):
     cryptobot_base_url: str = Field("", alias="CRYPTOBOT_BASE_URL")
     cryptobot_webhook_secret: str = Field("", alias="CRYPTOBOT_WEBHOOK_SECRET")
 
+    # Lolzteam Market — альтернативный способ оплаты (RUB через карты/СБП/Steam/Binance).
+    # Минимально требуется только LOLZTEAM_TOKEN и LOLZTEAM_MERCHANT_ID; остальное опционально.
+    lolzteam_token: str = Field("", alias="LOLZTEAM_TOKEN")
+    lolzteam_merchant_id: int = Field(0, alias="LOLZTEAM_MERCHANT_ID")
+    lolzteam_base_url: str = Field(
+        "https://prod-api.lzt.market", alias="LOLZTEAM_BASE_URL"
+    )
+    lolzteam_polling: bool = Field(True, alias="LOLZTEAM_POLLING")
+    lolzteam_poll_interval: int = Field(15, alias="LOLZTEAM_POLL_INTERVAL")
+    lolzteam_invoice_lifetime: int = Field(3600, alias="LOLZTEAM_INVOICE_LIFETIME")
+    lolzteam_callback_secret: str = Field("", alias="LOLZTEAM_CALLBACK_SECRET")
+
+    default_lolzteam_enabled: bool = Field(False, alias="DEFAULT_LOLZTEAM_ENABLED")
+    default_lolzteam_surcharge_percent: float = Field(
+        6.0, alias="DEFAULT_LOLZTEAM_SURCHARGE_PERCENT"
+    )
+    default_cryptobot_enabled: bool = Field(True, alias="DEFAULT_CRYPTOBOT_ENABLED")
+
     database_url: str = Field("sqlite+aiosqlite:///data/db.sqlite3", alias="DATABASE_URL")
 
     default_referral_percent: int = Field(5, alias="DEFAULT_REFERRAL_PERCENT")
@@ -65,6 +83,10 @@ class Settings(BaseSettings):
         if not self.cryptobot_base_url:
             return ""
         return f"{self.cryptobot_base_url.rstrip('/')}/cryptobot/webhook"
+
+    @property
+    def lolzteam_configured(self) -> bool:
+        return bool(self.lolzteam_token) and self.lolzteam_merchant_id > 0
 
 
 @lru_cache(maxsize=1)
