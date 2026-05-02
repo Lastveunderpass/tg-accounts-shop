@@ -20,6 +20,20 @@ DEFAULT_SETTING_KEYS: dict[str, str] = {
 }
 
 
+DEFAULT_WELCOME_TEXT = (
+    "👋 <b>Добро пожаловать!</b>\n\n"
+    "Здесь ты можешь купить зарегистрированные аккаунты.\n"
+    "Выбери раздел в меню ниже."
+)
+
+
+# Настройки, у которых дефолт — литерал, а не поле из .env.
+DEFAULT_SETTING_LITERALS: dict[str, str] = {
+    "welcome_text": DEFAULT_WELCOME_TEXT,
+    "welcome_image_file_id": "",
+}
+
+
 def _default_value(name: str) -> str:
     settings = get_settings()
     val = getattr(settings, name)
@@ -29,11 +43,15 @@ def _default_value(name: str) -> str:
 
 
 async def seed_settings(session: AsyncSession) -> None:
-    """Создаёт записи Setting с дефолтами из .env, не трогая уже существующие."""
+    """Создаёт записи Setting с дефолтами, не трогая уже существующие."""
     result = await session.execute(select(Setting.key))
     existing = {row[0] for row in result.all()}
     for key, attr in DEFAULT_SETTING_KEYS.items():
         if key in existing:
             continue
         session.add(Setting(key=key, value=_default_value(attr)))
+    for key, value in DEFAULT_SETTING_LITERALS.items():
+        if key in existing:
+            continue
+        session.add(Setting(key=key, value=value))
     await session.flush()

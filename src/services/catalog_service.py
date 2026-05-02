@@ -102,12 +102,16 @@ async def create_product(
     return p
 
 
+_UNSET = object()
+
+
 async def update_product(
     session: AsyncSession,
     product_id: int,
     *,
     name: str | None = None,
-    description: str | None = None,
+    description: object = _UNSET,
+    image_file_id: object = _UNSET,
     fmt: ProductFormat | None = None,
     upload_mode: UploadMode | None = None,
     is_active: bool | None = None,
@@ -118,8 +122,10 @@ async def update_product(
         raise ValueError("Товар не найден")
     if name is not None:
         p.name = name
-    if description is not None:
-        p.description = description
+    if description is not _UNSET:
+        p.description = description  # None очистит описание
+    if image_file_id is not _UNSET:
+        p.image_file_id = image_file_id  # None очистит картинку
     if fmt is not None:
         p.format = fmt
     if upload_mode is not None:

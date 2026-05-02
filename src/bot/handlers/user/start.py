@@ -9,16 +9,35 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.bot import keyboards, texts
 from src.config import get_settings
 from src.db.models import User
+from src.services import settings_service
 
 router = Router(name="start")
 
 
 @router.message(CommandStart())
-async def cmd_start(message: Message, user: User, state: FSMContext) -> None:
+async def cmd_start(
+    message: Message, user: User, state: FSMContext, session: AsyncSession
+) -> None:
     await state.clear()
     settings = get_settings()
     is_admin = user.id == settings.admin_id
-    await message.answer(texts.WELCOME, reply_markup=keyboards.main_menu(is_admin))
+
+    welcome_text = await settings_service.get_setting(session, "welcome_text", texts.WELCOME)
+    if not welcome_text:
+        welcome_text = texts.WELCOME
+    welcome_image = await settings_service.get_setting(session, "welcome_image_file_id", "")
+
+    kb = keyboards.main_menu(is_admin)
+    if welcome_image:
+        try:
+            await message.answer_photo(
+                welcome_image, caption=welcome_text, parse_mode="HTML", reply_markup=kb
+            )
+            return
+        except Exception:
+            # битый file_id или картинка удалена — фолбэк на текст
+            pass
+    await message.answer(welcome_text, parse_mode="HTML", reply_markup=kb)
 
 
 @router.callback_query(F.data == "cancel")

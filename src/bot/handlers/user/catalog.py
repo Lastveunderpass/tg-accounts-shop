@@ -107,11 +107,25 @@ async def cb_open_product(callback: CallbackQuery, session: AsyncSession) -> Non
             )
     rows.append([InlineKeyboardButton(text=texts.BACK, callback_data=f"cat:{prod.category_id}")])
     desc = f"\n\n{prod.description}" if prod.description else ""
-    await callback.message.edit_text(
-        f"🛒 <b>{prod.name}</b>{desc}\n\nВыбери вариант:",
-        parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
-    )
+    body = f"🛒 <b>{prod.name}</b>{desc}\n\nВыбери вариант:"
+    kb = InlineKeyboardMarkup(inline_keyboard=rows)
+
+    if prod.image_file_id:
+        # карточку с картинкой шлём отдельным сообщением — edit_text для photo не подходит
+        try:
+            await callback.message.answer_photo(
+                prod.image_file_id, caption=body, parse_mode="HTML", reply_markup=kb
+            )
+            await callback.answer()
+            return
+        except Exception:
+            # битый file_id — фолбэк на текстовое сообщение
+            pass
+
+    try:
+        await callback.message.edit_text(body, parse_mode="HTML", reply_markup=kb)
+    except Exception:
+        await callback.message.answer(body, parse_mode="HTML", reply_markup=kb)
     await callback.answer()
 
 

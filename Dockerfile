@@ -28,4 +28,6 @@ RUN mkdir -p /app/data /app/data/backups /app/data/logs /app/data/uploads \
 
 EXPOSE 8080
 
-CMD ["python", "-m", "src.main"]
+# Entrypoint сам прогоняет alembic upgrade head перед стартом приложения,
+# поэтому после `git pull && docker compose up -d --build` миграции применяются автоматически.
+CMD ["/app/scripts/entrypoint.sh"]

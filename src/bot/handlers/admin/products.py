@@ -109,9 +109,11 @@ def _kb_product_view(prod) -> InlineKeyboardMarkup:
         UploadMode.line_per_unit: "По строкам",
         UploadMode.media_group: "Несколько документов",
     }[prod.upload_mode]
+    image_label = "🖼 Картинка: есть" if prod.image_file_id else "🖼 Картинка: нет"
     rows = [
         [InlineKeyboardButton(text="✏️ Переименовать", callback_data=f"adm:prod:rename:{prod.id}")],
         [InlineKeyboardButton(text="📝 Описание", callback_data=f"adm:prod:desc:{prod.id}")],
+        [InlineKeyboardButton(text=image_label, callback_data=f"adm:prod:img:{prod.id}")],
         [
             InlineKeyboardButton(
                 text=f"🧬 Формат: {fmt_label}", callback_data=f"adm:prod:fmt:{prod.id}"
@@ -193,6 +195,60 @@ async def msg_desc_product(message: Message, state: FSMContext, session: AsyncSe
     await state.clear()
     await catalog_service.update_product(session, pid, description=desc or None)
     await message.answer("✅ Описание обновлено.")
+
+
+@router.callback_query(F.data.startswith("adm:prod:img:"))
+async def cb_image_product(
+    callback: CallbackQuery, state: FSMContext, session: AsyncSession
+) -> None:
+    pid = int(callback.data.split(":")[3])
+    prod = await catalog_service.get_product(session, pid)
+    if prod is None:
+        await callback.answer("Не найдено", show_alert=True)
+        return
+    rows: list[list[InlineKeyboardButton]] = []
+    if prod.image_file_id:
+        rows.append(
+            [InlineKeyboardButton(text="🗑 Убрать картинку", callback_data=f"adm:prod:imgdel:{pid}")]
+        )
+    rows.append([InlineKeyboardButton(text="← Назад", callback_data=f"adm:prod:open:{pid}")])
+    await state.set_state(AdminProductStates.waiting_image)
+    await state.update_data(prod_id=pid)
+    await callback.message.answer(
+        "Пришли картинку товара одним фото-сообщением. Она появится в каталоге.",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
+    )
+    await callback.answer()
+
+
+@router.message(AdminProductStates.waiting_image, F.photo)
+async def msg_product_image_photo(
+    message: Message, state: FSMContext, session: AsyncSession
+) -> None:
+    data = await state.get_data()
+    pid = int(data["prod_id"])
+    file_id = message.photo[-1].file_id
+    prod = await catalog_service.update_product(session, pid, image_file_id=file_id)
+    await state.clear()
+    await message.answer("✅ Картинка обновлена.", reply_markup=_kb_product_view(prod))
+
+
+@router.message(AdminProductStates.waiting_image)
+async def msg_product_image_invalid(message: Message) -> None:
+    await message.answer("Нужно прислать именно фото (не файл).")
+
+
+@router.callback_query(F.data.startswith("adm:prod:imgdel:"))
+async def cb_image_product_delete(
+    callback: CallbackQuery, state: FSMContext, session: AsyncSession
+) -> None:
+    pid = int(callback.data.split(":")[3])
+    prod = await catalog_service.update_product(session, pid, image_file_id=None)
+    await state.clear()
+    await callback.answer("Картинка удалена")
+    await callback.message.edit_text(
+        f"🛒 <b>{prod.name}</b>", parse_mode="HTML", reply_markup=_kb_product_view(prod)
+    )
 
 
 @router.callback_query(F.data.startswith("adm:prod:fmt:"))

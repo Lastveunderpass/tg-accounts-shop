@@ -13,6 +13,7 @@ from src.bot.handlers.admin import (
     stats,
     stock,
     variants,
+    welcome,
 )
 from src.bot.handlers.admin import (
     menu as admin_menu,
@@ -55,6 +56,7 @@ def build_dispatcher(bot: Bot) -> Dispatcher:
     dp.include_router(admin_promo.router)
     dp.include_router(stats.router)
     dp.include_router(broadcast.router)
+    dp.include_router(welcome.router)
     dp.include_router(settings_panel.router)
 
     # user

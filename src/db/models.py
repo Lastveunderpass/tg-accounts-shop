@@ -126,6 +126,7 @@ class Product(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_file_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     format: Mapped[ProductFormat] = mapped_column(
         SAEnum(ProductFormat, name="product_format"),
         nullable=False,

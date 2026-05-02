@@ -28,6 +28,7 @@ class AdminProductStates(StatesGroup):
     waiting_name = State()
     waiting_description = State()
     waiting_rename = State()
+    waiting_image = State()
 
 
 class AdminVariantStates(StatesGroup):
@@ -67,3 +68,8 @@ class AdminRefundStates(StatesGroup):
 
 class AdminSettingsStates(StatesGroup):
     waiting_value = State()
+
+
+class AdminWelcomeStates(StatesGroup):
+    waiting_text = State()
+    waiting_image = State()

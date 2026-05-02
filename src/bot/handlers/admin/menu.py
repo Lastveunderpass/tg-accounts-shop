@@ -38,7 +38,10 @@ def admin_menu_kb() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="📊 Статистика", callback_data="adm:stats"),
             InlineKeyboardButton(text="📣 Рассылка", callback_data="adm:bcast"),
         ],
-        [InlineKeyboardButton(text="⚙️ Настройки", callback_data="adm:settings")],
+        [
+            InlineKeyboardButton(text="👋 Приветствие", callback_data="adm:welcome"),
+            InlineKeyboardButton(text="⚙️ Настройки", callback_data="adm:settings"),
+        ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 

@@ -131,9 +131,8 @@ run_compose() {
     info "Собираю и поднимаю контейнер..."
     (cd "$INSTALL_DIR" && $SUDO docker compose build)
     (cd "$INSTALL_DIR" && $SUDO docker compose up -d)
-    info "Накатываю миграции Alembic..."
-    (cd "$INSTALL_DIR" && $SUDO docker compose exec -T app alembic upgrade head) \
-        || (cd "$INSTALL_DIR" && $SUDO docker compose run --rm app alembic upgrade head)
+    # Миграции Alembic накатываются автоматически в entrypoint контейнера
+    # (scripts/entrypoint.sh) перед стартом приложения, ручной шаг здесь не нужен.
     info "Готово."
 }
 
