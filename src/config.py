@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Any
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -67,6 +68,31 @@ class Settings(BaseSettings):
 
     app_host: str = Field("0.0.0.0", alias="APP_HOST")
     app_port: int = Field(8080, alias="APP_PORT")
+
+    @field_validator(
+        "cryptobot_poll_interval",
+        "lolzteam_merchant_id",
+        "lolzteam_poll_interval",
+        "lolzteam_invoice_lifetime",
+        "default_referral_percent",
+        "default_min_topup_rub",
+        "default_stock_low_threshold",
+        "default_max_qty_per_order",
+        "backup_retention_days",
+        "backup_hour",
+        "backup_minute",
+        "app_port",
+        mode="before",
+    )
+    @classmethod
+    def _empty_str_to_default(cls, v: Any, info: Any) -> Any:
+        # Пустая строка в .env (например `LOLZTEAM_MERCHANT_ID=`) трактуется как
+        # «использовать значение по умолчанию», а не как невалидный int.
+        if isinstance(v, str) and v.strip() == "":
+            field = cls.model_fields.get(info.field_name)
+            if field is not None:
+                return field.default
+        return v
 
     @property
     def support_url(self) -> str:
